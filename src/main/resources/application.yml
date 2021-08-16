@@ -1,0 +1,9 @@
+log:
+  level: DEBUG
+  dir: /home/ec2-user/work/log/wormhole
+
+server:
+  port: 9911
+
+spring:
+  resources.static-locations: classpath:/static
