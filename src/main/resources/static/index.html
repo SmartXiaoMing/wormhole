@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://static.runoob.com/assets/qrcode/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.2"></script>
+    <title>虫洞</title>
+<body>
+<div class="container">
+    <div class="row" id="app">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">虫洞</h3>
+                <form>
+                    <div class="alert alert-danger" role="alert">
+                        本虫洞讲武德, 不会保存数据, 而且传输是一次性的
+                    </div>
+                    <hr/>
+                    <div class="col-auto">
+                        <p>黑洞上传文件, 分享下载码</p>
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">黑洞地址</div>
+                            </div>
+                            <a  class="form-control" target="_blank" :href="blackholeUrl">{{blackholeUrl}}</a>
+                            <input type="button" class="btn btn-sm btn-outline-info" value="copy" @click="copy(blackholeUrl)">
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <p>白洞输入下载码, 下载文件</p>
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">白洞地址</div>
+                            </div>
+                            <a  class="form-control" target="_blank" :href="whiteholeUrl">{{whiteholeUrl}}</a>
+                            <input type="button" class="btn btn-sm btn-outline-info" value="copy" @click="copy(whiteholeUrl)">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="mx-auto">
+                <img src="./wormhole.jpeg" width="400"/>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+var app = new Vue({
+  el: '#app',
+  data: {
+    whiteholeUrl: window.location.origin + "/whitehole",
+    blackholeUrl: window.location.origin + "/blackhole",
+  },
+  methods: {
+    copy(e) {
+      const input = document.createElement("input");
+      document.body.appendChild(input);
+      input.setAttribute("value", e);
+      input.select();
+      if (document.execCommand("copy")) {
+        document.execCommand("copy");
+      }
+      document.body.removeChild(input);
+    },
+  },
+})
+</script>
+</body>
+</html>

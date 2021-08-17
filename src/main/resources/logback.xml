@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration debug="true" scan="true">
-	<springProperty scope="context" name="log.dir" source="log.dir" defaultValue="/var/log" />
-    <springProperty scope="context" name="log.level" source="log.level" defaultValue="INFO" />
     <property scope="context" name="LOG_PATTERN" value="[%-5p %d] [%X{TRACE_ID}] [%t %c{10}] - %marker%m %n%xEx" />
 	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <param name="target" value="System.out" />
@@ -12,9 +10,9 @@
 		</encoder>
 	</appender>
     <appender name="error" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${log.dir}/app.err.log</file>
+        <file>./app.err.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${log.dir}/app-%d{yyyy-MM-dd}.%i.err.log</fileNamePattern>
+            <fileNamePattern>./app-%d{yyyy-MM-dd}.%i.err.log</fileNamePattern>
             <maxFileSize>500MB</maxFileSize>
             <maxHistory>30</maxHistory>
             <totalSizeCap>5GB</totalSizeCap>

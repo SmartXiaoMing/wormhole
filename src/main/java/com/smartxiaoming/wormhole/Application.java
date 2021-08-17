@@ -11,20 +11,18 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.smartxiaoming.wormhole.Application.Stream.StateReady;
-import static com.smartxiaoming.wormhole.Application.Stream.StateUnset;
 
 @SpringBootApplication
 @ComponentScan("com.smartxiaoming")
-@RequestMapping("/")
+@RequestMapping("")
 @Controller
 public class Application {
     public static void main(String[] args) {
@@ -35,12 +33,15 @@ public class Application {
     static final ObjectMapper objectMapper = new ObjectMapper();
 
     static class Stream {
-        static final int StateUnset = 0;
-        static final int StateReady = 1;
-        int state = StateUnset;
+        boolean transferring = false;
         MultipartFile multipartFile;
     }
     ConcurrentHashMap<String, Stream> codeStreamMap = new ConcurrentHashMap<>();
+
+    @GetMapping({"", "/", "/index", "/index.htm"})
+    public String index() {
+        return "/index.html";
+    }
 
     @GetMapping("/blackhole")
     public String blackhole() {
@@ -55,35 +56,37 @@ public class Application {
     @PostMapping("/blackhole/{code}")
     @ResponseBody
     public String upload(@PathVariable String code, @RequestParam("file") MultipartFile file) {
-        log.info("enter uploadFile, code:{}", code);
-        Stream stream = null;
-        synchronized (this) {
-            stream = codeStreamMap.get(code);
-            if (stream == null) {
-                stream = new Stream();
-                codeStreamMap.put(code, stream);
+        log.info("enter upload, code:{}, filename:{}", code, file.getOriginalFilename());
+        try {
+            Stream stream = getStream(code);
+            synchronized (stream) {
+                if (stream.multipartFile != null) {
+                    return makeResponse(-1, "the code is in using, try another");
+                }
+                stream.multipartFile = file;
+                stream.notify();
             }
-            if (stream.state == StateReady) {
-                return makeResponse(-1, "the code is in using, try another");
-            }
-            stream.multipartFile = file;
-            stream.state = StateReady;
-        }
-        synchronized (stream) {
-            stream.notify();
-        }
-        synchronized (stream) {
-            if (stream.multipartFile != null) {
-                try {
-                    stream.wait();
-                    log.info("waiting file transferred");
-                } catch (Exception e) {
-                    log.info("error to wait", e);
-                    return makeResponse(-1, "error to transfer the file");
+            synchronized (stream) {
+                if (stream.multipartFile != null) {
+                    try {
+                        log.info("waiting file transferred");
+                        stream.wait(60000);
+                    } catch (Exception e) {
+                        log.info("error to wait, code:{}", code, e);
+                        return makeResponse(-1, "error to transfer the file");
+                    }
                 }
             }
+            if (stream.transferring) {
+                return makeResponse(0, "some one is downloading the file");
+            } else if (stream.multipartFile != null) {
+                return makeResponse(-1, "timeout, no one download the file");
+            } else {
+                return makeResponse(0, "the file has been downloaded by some body");
+            }
+        } finally {
+            codeStreamMap.remove(code);
         }
-        return makeResponse(0, "the file has been transferred");
     }
 
     @GetMapping("/whitehole")
@@ -92,18 +95,11 @@ public class Application {
     }
 
     @GetMapping("/whitehole/{code}")
-    public String download(@PathVariable String code, HttpServletResponse response) {
-        log.info("enter downloadFile, key:{}", code);
+    public void download(@PathVariable String code, HttpServletResponse response) throws IOException {
+        log.info("enter download, code:{}", code);
+        String msg = "";
         try {
-            Stream stream = null;
-            synchronized (this) {
-                stream = codeStreamMap.get(code);
-                if (stream == null) {
-                    stream = new Stream();
-                    stream.state = StateUnset;
-                    codeStreamMap.put(code, stream);
-                }
-            }
+            Stream stream = getStream(code);
             synchronized (stream) {
                 try {
                     if (stream.multipartFile == null) {
@@ -111,22 +107,42 @@ public class Application {
                     }
                     if (stream.multipartFile != null) {
                         response.setContentType(stream.multipartFile.getContentType());
-                        response.setHeader("Content-Disposition", "attachment; filename=" + stream.multipartFile.getOriginalFilename()); // TODO
+                        String filename = URLEncoder.encode(stream.multipartFile.getOriginalFilename(),"UTF-8");
+                        response.setHeader("Content-Disposition", "attachment; filename=" + filename);
+                        stream.transferring = true;
                         streamCopy(stream.multipartFile.getInputStream(), response.getOutputStream());
+                        stream.multipartFile = null;
+                        stream.transferring = false;
                     } else {
-                        return "/to.html";
+                        msg = "timeout-no-file-found";
                     }
                 } catch (InterruptedException e) {
-                    log.error("timeout to download, code:{}", e);
-                    return makeResponse(-1, "timout, no file came");
+                    log.error("timeout to download, code:{}", code, e);
+                    msg = "timeout-no-file-found";
                 } catch (Exception e) {
-                    log.error("error to download, code:{}", e);
-                    return makeResponse(-1, "internal error");
+                    log.error("error to download, code:{}", code, e);
+                    msg = "internal-error-retry";
+                }
+                stream.notify();
+                if (!msg.isEmpty()) {
+                    String url = "/to.html?msg=" + msg;
+                    log.info("download, code:{}, redirect:{}", code, url);
+                    response.sendRedirect(url);
                 }
             }
-            return "";
         } finally {
             codeStreamMap.remove(code);
+        }
+    }
+
+    Stream getStream(String code) {
+        synchronized (this) {
+            Stream stream = codeStreamMap.get(code);
+            if (stream == null) {
+                stream = new Stream();
+                codeStreamMap.put(code, stream);
+            }
+            return stream;
         }
     }
 
@@ -140,15 +156,6 @@ public class Application {
         return count;
     }
 
-    static void closeQuietly(Closeable c) {
-        try {
-            if (c != null) {
-                c.close();
-            }
-        } catch (Throwable t) {
-        }
-    }
-
     static String makeResponse(int code, String msg) {
         try {
             Map<String, Object> m = new HashMap<>();
@@ -156,7 +163,7 @@ public class Application {
             m.put("msg", msg);
             return objectMapper.writeValueAsString(m);
         } catch (Exception e) {
-            log.error("error to makeResponse, code:{}, msg:{}", code, msg);
+            log.error("error to makeResponse, code:{}, msg:{}", code, msg, e);
             return "";
         }
     }

@@ -16,6 +16,10 @@
             <div class="card-body">
                 <h3 class="card-title">这里是白洞</h3>
                 <form>
+                    <div class="alert alert-danger" role="alert">
+                        本虫洞讲武德, 不会保存数据, 而且传输是一次性的
+                    </div>
+                    <hr/>
                     <div class="col-auto">
                         <div class="input-group mb-2">
                             <div class="input-group-prepend">
@@ -24,6 +28,7 @@
                             <input type="text" class="form-control" v-model="downloadCode">
                             <a class="btn btn-sm btn-outline-info" target="_blank" :href="getDownloadUrl()" @click.prevent="download(getDownloadUrl())">下载</a>
                         </div>
+                        <p>{{msg}}</p>
                     </div>
                 </form>
             </div>
@@ -32,12 +37,33 @@
 </div>
 
 <script type="text/javascript">
+function parseUrlParam(str) {
+    var url = str ? str : decodeURI(location.search); //获取url中"?"符后的字串
+    var params = {};
+    if (url.indexOf('?') != -1) {
+        url = url.substr(1);
+    }
+    if (url) {
+        var strs = url.split('&');
+        for (var i = 0; i < strs.length; i++) {
+            var srtArry = strs[i].split('=');
+            var y = srtArry.shift();
+            params[y] = unescape(srtArry.join('='));
+        }
+    }
+    return params;
+}
 var app = new Vue({
   el: '#app',
   data: {
     downloadCode: "",
+    msg:"",
   },
   created: function () {
+    var param = parseUrlParam();
+    if (param.msg) {
+      this.msg = param.msg;
+    }
   },
   methods: {
     getDownloadUrl() {
