@@ -30,9 +30,9 @@
         <appender-ref ref="error"/>
     </appender>
     <logger name="javax.management" level="INFO" />
-    <logger name="org.springframework" level="DEBUG" />
+    <logger name="org.springframework" level="INFO" />
 	<root>
-		<level value="${log.level}"/>
+		<level value="INFO"/>
 		<appender-ref ref="async-error" />
 		<appender-ref ref="stdout" />
 	</root>

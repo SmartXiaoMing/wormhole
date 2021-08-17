@@ -17,8 +17,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.smartxiaoming.wormhole.Application.Stream.StateReady;
@@ -90,7 +88,7 @@ public class Application {
 
     @GetMapping("/whitehole")
     public String whitehole() {
-        return "/whitehole.html";
+        return "/to.html";
     }
 
     @GetMapping("/whitehole/{code}")
@@ -130,14 +128,6 @@ public class Application {
         } finally {
             codeStreamMap.remove(code);
         }
-    }
-
-    static String generateCode() {
-        return String.valueOf(new Random().nextInt(1000000) + 1000000).substring(1, 6);
-    }
-
-    static String uuid() {
-        return UUID.randomUUID().toString().replaceAll("-", "");
     }
 
     static long streamCopy(InputStream input, OutputStream output) throws IOException {

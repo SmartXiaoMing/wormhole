@@ -1,9 +1,5 @@
-log:
-  level: DEBUG
-  dir: /home/ec2-user/work/log/wormhole
-
 server:
-  port: 9911
+  port: 8877
 
 spring:
   resources.static-locations: classpath:/static

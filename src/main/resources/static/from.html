@@ -1,44 +1,61 @@
 <!doctype html>
 <html>
 <head>
-    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://static.runoob.com/assets/qrcode/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.2"></script>
-    <title>黑洞</title>
+    <title>虫洞</title>
 <body>
-<div class="container-fluid">
+<div class="container">
     <div class="row" id="app">
-        <form>
-            <div class="col-auto">
-                <div class="form-group">
-                    <label for="file">文件传输入口</label>
-                    <input type="file" class="form-control-file" id="file" @change="upload"/>
-                </div>
-            </div>
-            <div class="col-auto">
-                <div class="input-group mb-2">
-                    <div class="input-group-prepend">
-                        <div class="input-group-text">下载码</div>
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">这里是黑洞</h3>
+                <form>
+                    <div class="col-auto">
+                        <div class="form-group">
+                            <input type="file" class="file" id="file" @change="upload"/>
+                        </div>
                     </div>
-                    <input type="text" class="form-control" v-model="downloadCode">
-                    <input type="button" class="btn btn-sm btn-outline-info" value="copy" @click="copy(downloadCode)">
-                </div>
-            </div>
-            <div class="col-auto">
-                <div class="input-group mb-2">
-                    <div class="input-group-prepend">
-                        <div class="input-group-text">下载链接</div>
+                    <hr/>
+                    <div class="col-auto">
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">白洞地址</div>
+                            </div>
+                            <input type="text" class="form-control" v-model="whiteholeUrl">
+                            <input type="button" class="btn btn-sm btn-outline-info" value="copy" @click="copy(whiteholeUrl)">
+                        </div>
                     </div>
-                    <input type="text" class="form-control" :value="getDownloadUrl()">
-                    <input type="button" class="btn btn-sm btn-outline-info" value="copy" @click="copy(getDownloadUrl())">
-                </div>
+                    <div class="col-auto">
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">下载码</div>
+                            </div>
+                            <input type="text" class="form-control" v-model="downloadCode">
+                            <input type="button" class="btn btn-sm btn-outline-info" value="copy" @click="copy(downloadCode)">
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">下载链接</div>
+                            </div>
+                            <input type="text" class="form-control" :value="downloadUrl">
+                            <input type="button" class="btn btn-sm btn-outline-info" value="copy" @click="copy(downloadUrl)">
+                        </div>
+                    </div>
+                </form>
             </div>
-        </form>
+            <div class="mx-auto">
+            <div id="qrcode"></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -49,13 +66,24 @@ function randNumber() {
 var app = new Vue({
   el: '#app',
   data: {
-    downloadCode: randNumber(),
+    downloadCode: "",
+    downloadUrl: "",
+    whiteholeUrl: window.location.origin + "/whitehole",
   },
   created: function () {
   },
+  mounted: function () {
+    this.refreshData();
+  },
   methods: {
-    getDownloadUrl() {
-      return window.location.origin + "/whitehole/" + this.downloadCode;
+    refreshData() {
+      this.downloadCode = randNumber();
+      this.downloadUrl = window.location.origin + "/whitehole/" + this.downloadCode
+      var qrcode = new QRCode(document.getElementById("qrcode"), {
+        width : 200,
+        height : 200
+      });
+      qrcode.makeCode(this.downloadUrl);
     },
     upload(e) {
       let param = new FormData();
